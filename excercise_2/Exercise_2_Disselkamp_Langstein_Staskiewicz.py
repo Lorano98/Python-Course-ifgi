@@ -8,11 +8,11 @@
 def donuts(count):
     if type(count) == int:
         if count < 10:
-            return 'Number of vegan donuts: ' + str(count)
+            return '(ˆڡˆ)◞🍩 Number of vegan donuts: ' + str(count)
         else:
-            return 'Number of vegan donuts: many'
+            return 'Number of vegan donuts: many 🐄💗🌿'
     else:
-        return 'Passed count is not an Integer'
+        return 'Passed count is not an Integer 🧵'
 
 
 # verbing
@@ -24,10 +24,10 @@ def donuts(count):
 # Return the resulting string.
 def verbing(s):
     if len(s) >= 3:
-        if(s[-3:] == 'ing'):
-            return s + 'ly'
+        if(s[-3:] == 'ing 🏃‍♀️'):
+            return s + 'ly 📝'
         else:
-            return s + 'ing'
+            return s + 'ing 🏃‍♀️'
     else: 
         #return unchanged string
         return s
@@ -39,18 +39,14 @@ def verbing(s):
 # so [1, 2, 2, 3] returns [1, 2, 3]. You may create a new list or
 # modify the passed in list.
 def remove_adjacent(nums):
-    i = 0
-    lst = []
     for item in nums:
-        # Check if it is at the edge of the list
-        if len(nums) > i+1:
-            # Check if next item in nums is the same --> don´t push it in lst
-            if item != nums[i+1]:
-                lst.append(item)
-        else:
-            lst.append(item)
-        i = i + 1
-    return lst
+        # checks if the length of the list is one higher than the item index
+        if (nums.index(item)<len(nums)-1):
+            # chekcs if the item is the same as the next item 
+            if (item == nums[nums.index(item) + 1]):
+                # removes the item
+                nums.remove(item)
+    return(nums)
 
 def main():
     print('donuts')
