@@ -6,8 +6,13 @@
 # So donuts(5) returns 'Number of donuts: 5'
 # and donuts(23) returns 'Number of donuts: many'
 def donuts(count):
-# +++ your code here +++
-    return
+    if type(count) == int:
+        if count < 10:
+            return 'Number of vegan donuts: ' + str(count)
+        else:
+            return 'Number of vegan donuts: many'
+    else:
+        return 'Passed count is not an Integer'
 
 
 # verbing
@@ -18,8 +23,14 @@ def donuts(count):
 # If the string length is less than 3, leave it unchanged.
 # Return the resulting string.
 def verbing(s):
-# +++your code here+++
-    return
+    if len(s) >= 3:
+        if(s[-3:] == 'ing'):
+            return s + 'ly'
+        else:
+            return s + 'ing'
+    else: 
+        #return unchanged string
+        return s
 
 
 # Remove adjacent
@@ -28,20 +39,19 @@ def verbing(s):
 # so [1, 2, 2, 3] returns [1, 2, 3]. You may create a new list or
 # modify the passed in list.
 def remove_adjacent(nums):
-# +++your code here+++
-    return
+    i = 0
+    lst = []
+    for item in nums:
+        # Check if it is at the edge of the list
+        if len(nums) > i+1:
+            # Check if next item in nums is the same --> don´t push it in lst
+            if item != nums[i+1]:
+                lst.append(item)
+        else:
+            lst.append(item)
+        i = i + 1
+    return lst
 
-
-
-def donuts(count):
-# +++your code here+++
-    return
-def verbing(s):
-# +++your code here+++
-    return
-def remove_adjacent(nums):
-# +++your code here+++
-    return
 def main():
     print('donuts')
     print(donuts(4))
