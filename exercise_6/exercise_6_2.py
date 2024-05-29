@@ -57,14 +57,16 @@ else:
 provider = layer.dataProvider()
 
 #create new field
-
 fld = QgsField('district', QVariant.String, len = 50)
+# add new field to layer
 provider.addAttributes([fld])
+# update layer
 layer.updateFields()
 
 # Get House_Numbers.shp layer in the TOC
 layerDistricts = QgsProject.instance().mapLayersByName("Muenster_City_Districts")[0]
 
+# check for every swimming pool in which district it is
 for feature in layer.getFeatures():
     for district in layerDistricts.getFeatures():
         if district.geometry().contains(feature.geometry()):
