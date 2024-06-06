@@ -1,0 +1,1 @@
+pyuic5 "C:\Users\evala\AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins\muenster_city_district_tools\muenster_city_district_tools_dialog_base.ui" -o "C:\Users\evala\AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins\muenster_city_district_tools\muenster_city_district_tools_dialog_bases.py"
