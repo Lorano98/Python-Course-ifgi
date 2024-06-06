@@ -66,17 +66,17 @@ class ExportDialog(QtWidgets.QDialog, Ui_ExportDialog):
     def pdf(self):
         # Check wether the right amount of districts is selected
         if(len(layer_d.selectedFeatures())==0):
-            QMessageBox.warning(parent,"Information","No district selected!")
+            QMessageBox.warning(parent,"Information","(╯°□°)╯︵ ɹoɹɹƎ \n\n           No district selected!")
         elif(len(layer_d.selectedFeatures())>1):
-            QMessageBox.warning(parent,"Information","More than one district selected!")
+            QMessageBox.warning(parent,"Information","(╯°□°)╯︵ ɹoɹɹƎ \n\n           More than one district selected!")
         else:
             district = layer_d.selectedFeatures()[0]
             # Open the file dialog
-            output_path = QFileDialog.getSaveFileName(None, "Select save destination ","", '*.pdf')
+            output_path = QFileDialog.getSaveFileName(None, "📥 Select save destination ","", '*.pdf')
 
             if not output_path[0]:
                 # User has cancelled
-                QMessageBox.warning(parent,"Information","The user cancelled the export!")
+                QMessageBox.warning(parent,"Information","🚫😊 The user cancelled the export!")
             else:
                 createPDF(district, output_path[0], parent)
 
@@ -84,13 +84,13 @@ class ExportDialog(QtWidgets.QDialog, Ui_ExportDialog):
     def createCSV(self):
         # Check wether the right amount of districts is selected
         if(len(layer_d.selectedFeatures())==0):
-            QMessageBox.warning(parent,"Information","No district selected!")
+            QMessageBox.warning(parent,"Information","(╯°□°)╯︵ ɹoɹɹƎ \n\n           No district selected!")
         else:
             # Open the file dialog
-            output_path = QFileDialog.getSaveFileName(None, "Select save destination ","", '*.csv')
+            output_path = QFileDialog.getSaveFileName(None, "📥 Select save destination ","", '*.csv')
 
             if not output_path[0]:
-                QMessageBox.warning(parent,"Information","The user cancelled the export!")
+                QMessageBox.warning(parent,"Information","🚫😊 The user cancelled the export!")
             else:
                 # List to store all the rows.
                 data = []
@@ -113,7 +113,7 @@ class ExportDialog(QtWidgets.QDialog, Ui_ExportDialog):
                         writer.writerow(i)
 
                 # Feedback after the writing has finished
-                QMessageBox.information(parent,"Information","The csv was created successfully at the path: " + output_path[0])
+                QMessageBox.information(parent,"Information","ദ്ദി(｡•̀ ,<)~✩‧₊ \nThe csv was created successfully at the path: " + output_path[0])
 
 class MuensterCityDistrictToolsDialog(QtWidgets.QDialog, FORM_CLASS):
     def __init__(self, parent=None):
@@ -131,9 +131,9 @@ class MuensterCityDistrictToolsDialog(QtWidgets.QDialog, FORM_CLASS):
     def getData(self):
         # Check wether the right amount of districts is selected
         if(len(layer_d.selectedFeatures())==0):
-            QMessageBox.warning(parent,"Information","No district selected!")
+            QMessageBox.warning(parent,"Information","(╯°□°)╯︵ ɹoɹɹƎ \n\n           No district selected!")
         elif(len(layer_d.selectedFeatures())>1):
-            QMessageBox.warning(parent,"Information","More than one district selected!")
+            QMessageBox.warning(parent,"Information","(╯°□°)╯︵ ɹoɹɹƎ \n\n           More than one district selected!")
         else:
             district = layer_d.selectedFeatures()[0]
 

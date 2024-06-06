@@ -108,4 +108,4 @@ def createPDF(district, output_path, parent):
     os.remove(picture_path)
 
     # Show message with info, that is was created successfully
-    QMessageBox.information(parent,"Information","The pdf was created successfully at the path: " + output_path)
+    QMessageBox.information(parent,"Information","ദ്ദി(｡•̀ ,<)~✩‧₊ \nThe pdf was created successfully at the path: " + output_path)
