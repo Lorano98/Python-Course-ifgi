@@ -26,7 +26,7 @@ sql = f"OBJECTID={near_id}"
 # Search for the next busstop to save the name
 scur = arcpy.da.SearchCursor(in_table="stops_ms_mitte",field_names=['name'],where_clause=sql)
 for row in scur:
-    arcpy.AddMessage(f"Name Haltestelle: {row[0]}")    
-arcpy.AddMessage(f"Entfernung: {dist}m")
+    arcpy.AddMessage(f"Name of busstop: {row[0]}")    
+arcpy.AddMessage(f"Distance: {dist}m")
 
 print('Work Done')
