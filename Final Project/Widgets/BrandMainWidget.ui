@@ -155,9 +155,6 @@
     </disabled>
    </palette>
   </property>
-  <property name="cursor">
-   <cursorShape>UpArrowCursor</cursorShape>
-  </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>

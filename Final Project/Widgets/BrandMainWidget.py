@@ -9,7 +9,13 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from .Brandverwaltung import Ui_Dialog as Brandverwaltung
 
+def openBrandverwaltung(self):
+    brandverwaltung = QtWidgets.QDialog()
+    ui = Brandverwaltung()
+    ui.setupUi(brandverwaltung)
+    brandverwaltung.exec_()
 
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
@@ -105,6 +111,8 @@ class Ui_Dialog(object):
         self.button.accepted.connect(Dialog.accept) # type: ignore
         self.button.rejected.connect(Dialog.reject) # type: ignore
         QtCore.QMetaObject.connectSlotsByName(Dialog)
+
+        self.pushButtonFeuerVerwalten.clicked.connect(openBrandverwaltung)
 
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
