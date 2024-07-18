@@ -459,7 +459,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QgsFeatureListComboBox" name="mFeatureListComboBox_2">
+  <widget class="QgsFeatureListComboBox" name="ComboBoxHN">
    <property name="geometry">
     <rect>
      <x>140</x>
