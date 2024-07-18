@@ -201,7 +201,7 @@
     <string>Neuer Brand? Lege das Feuer an:</string>
    </property>
   </widget>
-  <widget class="QTextEdit" name="textEdit">
+  <widget class="QTextEdit" name="ArtFeuer">
    <property name="geometry">
     <rect>
      <x>150</x>
@@ -211,7 +211,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton">
+  <widget class="QPushButton" name="buttonInputPoint">
    <property name="geometry">
     <rect>
      <x>30</x>
@@ -296,7 +296,7 @@
     <string>Verstärkung:</string>
    </property>
   </widget>
-  <widget class="QTextEdit" name="textEdit_4">
+  <widget class="QTextEdit" name="textEditVerstaerkung">
    <property name="geometry">
     <rect>
      <x>130</x>
@@ -419,7 +419,7 @@
     <string>Anzahl benötigter Fahrzeuge:</string>
    </property>
   </widget>
-  <widget class="QSpinBox" name="spinBox">
+  <widget class="QSpinBox" name="spinBoxAnzahlFahrzeuge">
    <property name="geometry">
     <rect>
      <x>260</x>
@@ -429,7 +429,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QSpinBox" name="spinBox_2">
+  <widget class="QSpinBox" name="spinBoxAnzahlVerletzter">
    <property name="geometry">
     <rect>
      <x>170</x>
@@ -439,7 +439,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QSpinBox" name="spinBox_3">
+  <widget class="QSpinBox" name="spinBoxAnzahlGefaehrder">
    <property name="geometry">
     <rect>
      <x>190</x>
@@ -449,7 +449,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QgsFeatureListComboBox" name="mFeatureListComboBox">
+  <widget class="QgsFeatureListComboBox" name="ComboBoxStrasse">
    <property name="geometry">
     <rect>
      <x>100</x>

@@ -232,7 +232,7 @@
     <string>Brandstatus zu gelöscht ändern</string>
    </property>
   </widget>
-  <widget class="QgsFeatureListComboBox" name="mFeatureListComboBox">
+  <widget class="QgsFeatureListComboBox" name="ComboBoxBrandID">
    <property name="geometry">
     <rect>
      <x>140</x>

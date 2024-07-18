@@ -180,7 +180,7 @@
     <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
    </property>
   </widget>
-  <widget class="QPushButton" name="FeuerAnlegen">
+  <widget class="QPushButton" name="pushButtonFeuerAnlegen">
    <property name="geometry">
     <rect>
      <x>30</x>
@@ -200,7 +200,7 @@
     <string>Feuer! 🔥</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="FeuerVerwalten">
+  <widget class="QPushButton" name="pushButtonFeuerVerwalten">
    <property name="geometry">
     <rect>
      <x>30</x>
@@ -213,7 +213,7 @@
     <string>Brände verwalten</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="FahrzeugeVerwalten">
+  <widget class="QPushButton" name="pushButtonFahrzeugeVerwalten">
    <property name="geometry">
     <rect>
      <x>190</x>

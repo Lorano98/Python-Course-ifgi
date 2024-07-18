@@ -201,7 +201,7 @@
     <string>Fahrzeugverwaltung</string>
    </property>
   </widget>
-  <widget class="QgsFeatureListComboBox" name="mFeatureListComboBox_2">
+  <widget class="QgsFeatureListComboBox" name="ComboBoxStationsID">
    <property name="geometry">
     <rect>
      <x>150</x>
