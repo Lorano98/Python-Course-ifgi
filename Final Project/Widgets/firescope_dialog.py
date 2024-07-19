@@ -26,32 +26,56 @@ import os
 
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
+from qgis.core import QgsProject
+from qgis.utils import iface
+from qgis.PyQt.QtWidgets import QComboBox
+
 from .Brandverwaltung import Ui_Dialog as Brandverwaltung
 from .Branderfassung import Ui_Dialog as Branderfassung
 from .Fahrzeugverwaltung import Ui_Dialog as Fahrzeugverwaltung
 
-def openBrandverwaltung(self):
-    brandverwaltung = QtWidgets.QDialog()
-    ui = Brandverwaltung()
-    ui.setupUi(brandverwaltung)
-    brandverwaltung.exec_()
-
-def openBranderfassung(self):
-    branderfassung = QtWidgets.QDialog()
-    ui = Branderfassung()
-    ui.setupUi(branderfassung)
-    branderfassung.exec_() 
-
-def openFahrzeugverwaltung(self):
-    fahrzeugverwaltung = QtWidgets.QDialog()
-    ui = Fahrzeugverwaltung()
-    ui.setupUi(fahrzeugverwaltung)
-    fahrzeugverwaltung.exec_()
-
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'BrandMainWidget.ui'))
+    
+# Get the district layer from the map
+layer_strassen = QgsProject.instance().mapLayersByName("Strassen")[0]
+parent = iface.mainWindow()
 
+class BranderfassungDialog(QtWidgets.QDialog, Branderfassung):
+    def __init__(self, parent=None):
+        super(BranderfassungDialog, self).__init__(parent)
+        self.setupUi(self)
+
+        #strassen_liste = []
+        #for f in layer_strassen.getFeatures():
+        #    strassen_liste.append(f["NAME"])
+        #    
+        #print(strassen_liste)
+        
+        #print(self.ComboBoxStrasse)
+
+class BrandverwaltungDialog(QtWidgets.QDialog, Brandverwaltung):
+    def __init__(self, parent=None):
+        super(BrandverwaltungDialog, self).__init__(parent)
+        self.setupUi(self)
+
+class Fahrzeugverwaltung(QtWidgets.QDialog, Fahrzeugverwaltung):
+    def __init__(self, parent=None):
+        super(Fahrzeugverwaltung, self).__init__(parent)
+        self.setupUi(self)
+        
+def openBranderfassung(self):
+    dialog = BranderfassungDialog()
+    dialog.exec_()
+
+def openBrandverwaltung(self):
+    dialog = BrandverwaltungDialog()
+    dialog.exec_()
+
+def openFahrzeugverwaltung(self):
+    dialog = Fahrzeugverwaltung()
+    dialog.exec_()
 
 class FirescopeDialog(QtWidgets.QDialog, FORM_CLASS):
     def __init__(self, parent=None):
@@ -66,4 +90,4 @@ class FirescopeDialog(QtWidgets.QDialog, FORM_CLASS):
         
         self.pushButtonFeuerVerwalten.clicked.connect(openBrandverwaltung)
         self.pushButtonFeuerAnlegen.clicked.connect(openBranderfassung)
-        self.pushButtonFahrzeugVerwalten.clicked.connect(openFahrzeugverwaltung)
+        self.pushButtonFahrzeugeVerwalten.clicked.connect(openFahrzeugverwaltung)
