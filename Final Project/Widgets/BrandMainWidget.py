@@ -9,13 +9,7 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from .Brandverwaltung import Ui_Dialog as Brandverwaltung
 
-def openBrandverwaltung(self):
-    brandverwaltung = QtWidgets.QDialog()
-    ui = Brandverwaltung()
-    ui.setupUi(brandverwaltung)
-    brandverwaltung.exec_()
 
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
@@ -68,27 +62,26 @@ class Ui_Dialog(object):
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Link, brush)
         Dialog.setPalette(palette)
-        Dialog.setCursor(QtGui.QCursor(QtCore.Qt.UpArrowCursor))
         Dialog.setWhatsThis("")
         self.button = QtWidgets.QDialogButtonBox(Dialog)
         self.button.setGeometry(QtCore.QRect(30, 240, 341, 32))
         self.button.setOrientation(QtCore.Qt.Horizontal)
         self.button.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
         self.button.setObjectName("button")
-        self.FeuerAnlegen = QtWidgets.QPushButton(Dialog)
-        self.FeuerAnlegen.setGeometry(QtCore.QRect(30, 60, 171, 51))
+        self.pushButtonFeuerAnlegen = QtWidgets.QPushButton(Dialog)
+        self.pushButtonFeuerAnlegen.setGeometry(QtCore.QRect(30, 60, 171, 51))
         font = QtGui.QFont()
         font.setPointSize(12)
         font.setBold(True)
         font.setWeight(75)
-        self.FeuerAnlegen.setFont(font)
-        self.FeuerAnlegen.setObjectName("FeuerAnlegen")
-        self.FeuerVerwalten = QtWidgets.QPushButton(Dialog)
-        self.FeuerVerwalten.setGeometry(QtCore.QRect(30, 180, 141, 28))
-        self.FeuerVerwalten.setObjectName("FeuerVerwalten")
-        self.FahrzeugeVerwalten = QtWidgets.QPushButton(Dialog)
-        self.FahrzeugeVerwalten.setGeometry(QtCore.QRect(190, 180, 141, 28))
-        self.FahrzeugeVerwalten.setObjectName("FahrzeugeVerwalten")
+        self.pushButtonFeuerAnlegen.setFont(font)
+        self.pushButtonFeuerAnlegen.setObjectName("pushButtonFeuerAnlegen")
+        self.pushButtonFeuerVerwalten = QtWidgets.QPushButton(Dialog)
+        self.pushButtonFeuerVerwalten.setGeometry(QtCore.QRect(30, 180, 141, 28))
+        self.pushButtonFeuerVerwalten.setObjectName("pushButtonFeuerVerwalten")
+        self.pushButtonFahrzeugeVerwalten = QtWidgets.QPushButton(Dialog)
+        self.pushButtonFahrzeugeVerwalten.setGeometry(QtCore.QRect(190, 180, 141, 28))
+        self.pushButtonFahrzeugeVerwalten.setObjectName("pushButtonFahrzeugeVerwalten")
         self.label = QtWidgets.QLabel(Dialog)
         self.label.setGeometry(QtCore.QRect(30, 150, 121, 21))
         font = QtGui.QFont()
@@ -112,13 +105,11 @@ class Ui_Dialog(object):
         self.button.rejected.connect(Dialog.reject) # type: ignore
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 
-        self.pushButtonFeuerVerwalten.clicked.connect(openBrandverwaltung)
-
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
-        self.FeuerAnlegen.setText(_translate("Dialog", "Feuer! 🔥"))
-        self.FeuerVerwalten.setText(_translate("Dialog", "Brände verwalten"))
-        self.FahrzeugeVerwalten.setText(_translate("Dialog", "Fahrzeuge verwalten"))
+        self.pushButtonFeuerAnlegen.setText(_translate("Dialog", "Feuer! 🔥"))
+        self.pushButtonFeuerVerwalten.setText(_translate("Dialog", "Brände verwalten"))
+        self.pushButtonFahrzeugeVerwalten.setText(_translate("Dialog", "Fahrzeuge verwalten"))
         self.label.setText(_translate("Dialog", "Verwaltung"))
         self.label_2.setText(_translate("Dialog", "Neuer Brand? Lege das Feuer an:"))

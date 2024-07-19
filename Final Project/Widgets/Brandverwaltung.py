@@ -84,12 +84,12 @@ class Ui_Dialog(object):
         font.setPointSize(10)
         self.label_9.setFont(font)
         self.label_9.setObjectName("label_9")
-        self.pushButton = QtWidgets.QPushButton(Dialog)
-        self.pushButton.setGeometry(QtCore.QRect(30, 110, 201, 28))
-        self.pushButton.setObjectName("pushButton")
-        self.mFeatureListComboBox = QgsFeatureListComboBox(Dialog)
-        self.mFeatureListComboBox.setGeometry(QtCore.QRect(140, 60, 231, 31))
-        self.mFeatureListComboBox.setObjectName("mFeatureListComboBox")
+        self.pushButtonBrandStatus = QtWidgets.QPushButton(Dialog)
+        self.pushButtonBrandStatus.setGeometry(QtCore.QRect(30, 110, 201, 28))
+        self.pushButtonBrandStatus.setObjectName("pushButtonBrandStatus")
+        self.ComboBoxBrandID = QgsFeatureListComboBox(Dialog)
+        self.ComboBoxBrandID.setGeometry(QtCore.QRect(140, 60, 231, 31))
+        self.ComboBoxBrandID.setObjectName("ComboBoxBrandID")
 
         self.retranslateUi(Dialog)
         self.button.accepted.connect(Dialog.accept) # type: ignore
@@ -101,5 +101,5 @@ class Ui_Dialog(object):
         Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
         self.label.setText(_translate("Dialog", "Brandverwaltung"))
         self.label_9.setText(_translate("Dialog", "Brand wählen:"))
-        self.pushButton.setText(_translate("Dialog", "Brandstatus zu gelöscht ändern"))
+        self.pushButtonBrandStatus.setText(_translate("Dialog", "Brandstatus zu gelöscht ändern"))
 from qgsfeaturelistcombobox import QgsFeatureListComboBox
