@@ -51,7 +51,7 @@ def createPDF(feuer, output_path, parent, layer_Feuer):
         c.drawString(100,655,f"Es wurde keine Verstärkung angefordert.")
     c.drawString(100,640,f"Anzahl der Einsatzfahrzeuge: {num_Fahrze}")
     c.drawString(100,625,f"Datum des Brandes: {datum}")
-    if status == "ja":
+    if status == "geloescht":
         c.drawString(100,610,f"Der Brand wurde erkannt und die Gefahr gebannt.")
     else:
         c.drawString(100,610,f"Es brennt noch!")  
