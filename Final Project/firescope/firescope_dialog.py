@@ -23,47 +23,289 @@
 """
 
 import os
+from qgis import processing
+import time
+import random
 
-from qgis.PyQt import uic
-from qgis.PyQt import QtWidgets
-from qgis.core import QgsProject
+from qgis.PyQt import uic, QtWidgets
+from PyQt5.QtCore import QDateTime
+from qgis.core import QgsProject, QgsFeature, QgsCoordinateTransform, QgsCoordinateReferenceSystem, QgsVectorLayer
 from qgis.utils import iface
-from qgis.PyQt.QtWidgets import QComboBox
+from qgis.PyQt.QtWidgets import QMessageBox, QFileDialog
 
 from .Brandverwaltung import Ui_Dialog as Brandverwaltung
 from .Branderfassung import Ui_Dialog as Branderfassung
 from .Fahrzeugverwaltung import Ui_Dialog as Fahrzeugverwaltung
 
+from .pdfFunctions import createPDF
+
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'BrandMainWidget.ui'))
     
-# Get the district layer from the map
-layer_strassen = QgsProject.instance().mapLayersByName("Strassen")[0]
 parent = iface.mainWindow()
+
+# Alle Layer laden und in einem Dictionary speichern
+# Warnung anzeigen, wenn ein Layer nicht gefunden wird
+warning_message = 'Der Layer "{}" muss sich im Projekt befinden! \nBitte Layer hinzufügen und Plugin neustarten.'
+layer_names = ["Feuer", "Strassen", "Hausnummern", "edges_muenster", "routes", "Notrufmeldestellen"]
+data = {}
+for name in layer_names:
+    try:
+        data[f"layer_{name.lower()}"] = QgsProject.instance().mapLayersByName(name)[0]
+    except IndexError:
+        QMessageBox.warning(parent, "Warning", warning_message.format(name))
 
 class BranderfassungDialog(QtWidgets.QDialog, Branderfassung):
     def __init__(self, parent=None):
         super(BranderfassungDialog, self).__init__(parent)
         self.setupUi(self)
-
-        #strassen_liste = []
-        #for f in layer_strassen.getFeatures():
-        #    strassen_liste.append(f["NAME"])
-        #    
-        #print(strassen_liste)
         
-        #print(self.ComboBoxStrasse)
+        # Setzen des Layers zum Suchen des Straßennamen
+        self.ComboBoxStrasse.setSourceLayer(data["layer_strassen"])
+        self.ComboBoxStrasse.setDisplayExpression("NAME")
+        # Event Listener, der feuert, wenn die Kombo-Box geändert wird
+        self.ComboBoxStrasse.currentIndexChanged.connect(self.updateComboBoxHN)
+
+        # Setzen der Brandklassen und öffnen eines Infofensters
+        self.ArtFeuer.addItems(["Brandklasse A", "Brandklasse B", "Brandklasse C", "Brandklasse D", "Brandklasse F"])
+        self.info.clicked.connect(self.openInfo)
+
+        # Dropdown für Verstärkung
+        self.textEditVerstaerkung.addItems(["Ja", "Nein"])
+
+        # Datumsfeld mit aktuellem Datum füllen
+        self.dateTimeEdit.setDateTime(QDateTime.currentDateTime())
+        self.button.clicked.connect(self.okButton)
+    
+    def updateComboBoxHN(self):
+        current_value = self.ComboBoxStrasse.currentText()
+        # Herausfinden des Straßenschlüssels des ausgewählten Features
+        for f in data["layer_strassen"].getFeatures():
+            if f["NAME"] == current_value:
+                self.strassenschluessel= f["STR_SCHL"]
+                break
+
+        # Setzen des Hausnummernlayers, um ihn dann nach der ausgewählten Straße zu filtern
+        self.ComboBoxHN.setSourceLayer(data["layer_hausnummern"])
+        self.ComboBoxHN.setDisplayExpression("Hsn")
+        self.ComboBoxHN.setFilterExpression(f"H_STRSCHL = {self.strassenschluessel}")
+
+        # # Map Tool erstellen
+        # self.point_tool = QgsMapToolEmitPoint(iface.mapCanvas())
+        # self.point_tool.canvasClicked.connect(self.add_point)
+
+    def openInfo(self):
+        # Zeigt Infos zu den Brandklassen an
+        klassen = {"A": "Brände fester Stoffe, hauptsächlich organischer Natur, die normalerweise unter Glutbildung verbrennen",
+                   "B": "Brände von flüssigen oder flüssig werdenden Stoffen",
+                   "C": "Brände von Gasen",
+                   "D": "Brände von Metallen",
+                   "F": "Brände von Speiseölen/-fetten (pflanzliche oder tierische Öle und Fette) in Frittier- und Fettbackgeräten und anderen Kücheneinrichtungen und -geräten"}
+        QMessageBox.information(parent, "Information", f"Brandklasse A:\n{klassen['A']}\n\nBrandklasse B:\n{klassen['B']}\n\nBrandklasse C:\n{klassen['C']}\n\nBrandklasse D:\n{klassen['D']}\n\nBrandklasse F:\n{klassen['F']}")
+
+    def okButton(self):
+        # Neues Feature erstellen
+        provider = data["layer_feuer"].dataProvider()
+        fields = data["layer_feuer"].fields()
+        feature_new = QgsFeature(fields)
+        # Alle Infos aus den Feldern holen
+        attributes = {
+            "id": round(random.random() * 100000000),
+            "Typ": self.ArtFeuer.currentText(),
+            "Num_Gefaeh": self.spinBoxAnzahlGefaehrder.value(),
+            "Num_Verlet": self.spinBoxAnzahlVerletzter.value(),
+            "Verstaerku": self.textEditVerstaerkung.currentText(),
+            "Num_fahrze": self.spinBoxAnzahlFahrzeuge.value(),
+            "Datum": self.dateTimeEdit.dateTime().toString("yyyy-MM-dd hh:mm:ss"),
+            "Strasse": self.ComboBoxStrasse.currentText(),
+            "Hausnummer": self.ComboBoxHN.currentText(),
+            "Status": "brennt"
+        }
+
+        # Jedes Attribut wird in das neue Feature geschrieben
+        for field_name, value in attributes.items():
+            feature_new.setAttribute(field_name, value)
+
+        # Selektieren der ausgewählten Adresse
+        hsn = self.ComboBoxHN.currentText()
+        data["layer_hausnummern"].selectByExpression(f"Hsn = '{hsn}' and H_STRSCHL = {self.strassenschluessel}")
+        sel_hsn = data["layer_hausnummern"].selectedFeatures()[0]
+
+        # Transformieren nach dem Koordinatensystem des Feuerlayers
+        crs_from = QgsCoordinateReferenceSystem(data["layer_hausnummern"].crs().postgisSrid())
+        crs_to = QgsCoordinateReferenceSystem(data["layer_feuer"].crs().postgisSrid())
+        coordinate_transform = QgsCoordinateTransform(crs_from, crs_to, QgsProject.instance())
+        geometry_hsn = sel_hsn.geometry()
+        geometry_hsn.transform(coordinate_transform)
+
+        # Setzen der Geometrie des neuen Features
+        feature_new.setGeometry(geometry_hsn)
+
+        data["layer_hausnummern"].removeSelection()
+
+        # Hinzufügen des neuen Features
+        provider.addFeatures([feature_new])
+        self.routing(attributes["id"], geometry_hsn)
+
+        QMessageBox.information(parent, "Information", f"Oh nein 😱! Es brennt an folgender Adresse: \n🔥{self.ComboBoxStrasse.currentText()} {self.ComboBoxHN.currentText()}🔥\n\nHilfe ist unterwegs.\n🚒👩‍🚒🚒👨‍🚒🚒🚨🚒")
+    
+    def routing(self,id,geometry_hsn):
+        # Path für den entstehenden Layer festlegen. Da man den Layer später nicht löschen kann, wird
+        # immer wieder ein neuer erstellt im Ordner "Muell"
+        directory, filename = os.path.split(data["layer_edges_muenster"].dataProvider().dataSourceUri())
+        path = directory + "/muell/" + filename[0:-4] + f"_routing{id}.shp"
+        
+        # Transformieren nach dem Koordinatensystem des Feuerlayers
+        crs_from = QgsCoordinateReferenceSystem(data["layer_feuer"].crs().postgisSrid())
+        crs_to = QgsCoordinateReferenceSystem(3857)
+        coordinate_transform = QgsCoordinateTransform(crs_from, crs_to, QgsProject.instance())
+        geometry_hsn.transform(coordinate_transform)
+
+        # Create a QgsDistanceArea() instance
+        #da = QgsDistanceArea()
+
+        # Werkzeug Shortest Path
+        processing.run("native:shortestpathpointtopoint", 
+                       {
+                           'INPUT':data["layer_edges_muenster"].dataProvider().dataSourceUri(),
+                           'STRATEGY':0,
+                           'DIRECTION_FIELD':'',
+                           'VALUE_FORWARD':'',
+                           'VALUE_BACKWARD':'',
+                           'VALUE_BOTH':'',
+                           'DEFAULT_DIRECTION':2,
+                           'SPEED_FIELD':'',
+                           'DEFAULT_SPEED':50,
+                           'TOLERANCE':0,
+                           'START_POINT':geometry_hsn.asPoint(),
+                           'END_POINT':'848697.957322,6791398.668774 [EPSG:3857]',
+                           'OUTPUT': path
+                           }
+                        )
+        time.sleep(2)
+
+        routing = QgsVectorLayer(path, "erg_route", "ogr")
+        
+        provider = data["layer_routes"].dataProvider()
+        fields = data["layer_routes"].fields()
+        feature_new = QgsFeature(fields)
+
+        attributes = {
+            "id": id,
+            "Strasse": self.ComboBoxStrasse.currentText(),
+            "Hsn": self.ComboBoxHN.currentText()
+        }
+        # Jedes Attribut wird in das neue Feature geschrieben
+        for field_name, value in attributes.items():
+            feature_new.setAttribute(field_name, value)
+
+        # Setzen der Geometrie des neuen Features
+        for feature in routing.getFeatures():
+            geom = feature.geometry()
+        feature_new.setGeometry(geom)
+
+        provider.addFeatures([feature_new])
+        #QgsProject.instance().removeMapLayer(routing.id())
+
+        # basename = path[0:-4]
+        # extensions = ['.shp', '.shx', '.dbf', '.prj', '.cpg']
+        # # Alle Dateien mit den entsprechenden Erweiterungen löschen
+        # for ext in extensions:
+        #     filepath = os.path.join("muell/" + path, basename + ext)
+        #     if os.path.exists(filepath):
+        #         os.remove(filepath)
+        #         print(f"{filepath} gelöscht.")
+        #     else:
+        #         print(f"{filepath} existiert nicht.")
+
+    # def inputPoint(self):
+    #     print("inputPoint")
+    #     iface.mapCanvas().setMapTool(self.point_tool)
+    
+    # def add_point(self, point):
+    #     print("add_point")
+
 
 class BrandverwaltungDialog(QtWidgets.QDialog, Brandverwaltung):
-    def __init__(self, parent=None):
-        super(BrandverwaltungDialog, self).__init__(parent)
+    def init(self, parent=None):
+        super(BrandverwaltungDialog, self).init(parent)
         self.setupUi(self)
+        self.ComboBoxBrandID.setSourceLayer(data["layer_feuer"])
+        self.ComboBoxBrandID.setDisplayExpression("id")
+        self.pushButtonBrandStatus.clicked.connect(self.changeStatus)
+        self.pushButton.clicked.connect(self.pdf)
+
+    # Statusänderung
+    def changeStatus(self):
+        # speichern der gewählten ID aus dem Input
+        sID = int(self.ComboBoxBrandID.currentText())
+        # das Feature anhand der ID auswählen
+        data["layer_feuer"].selectByExpression(f"\"id\"={sID}", data["layer_feuer"].SetSelection)
+        # speichern des gewählten Features
+        sFeuer= data["layer_feuer"].selectedFeatures()
+        # ID vom Feld Status
+        field_idx = data["layer_feuer"].fields().indexOf('Status')
+        # ändern des Attributs Status des ausgewählten Features zu gelöscht
+        for feat_id in data["layer_feuer"].selectedFeatureIds():
+            data["layer_feuer"].changeAttributeValue(feat_id, field_idx, "ja")
+        # Auswahl aufheben
+        data["layer_feuer"].removeSelection()
+
+        QMessageBox.information(parent,"Information",f"Der Brandstatuts von Brand {sID} wurde zu gelöscht geändert.")
+
+    # PDF drucken
+        # Function to create a pdf
+    def pdf(self):
+        # speichern der gewählten ID aus dem Input
+        sID = int(self.ComboBoxBrandID.currentText())
+        # das Feature anhand der ID auswählen
+        data["layer_feuer"].selectByExpression(f"\"id\"={sID}", data["layer_feuer"].SetSelection)
+        # speichern des gewählten Features
+        sFeuer= data["layer_feuer"].selectedFeatures()
+        # Open the file dialog
+        output_path = QFileDialog.getSaveFileName(None, "📥 Select save destination ","", '*.pdf')
+        if not output_path[0]:
+            # User has cancelled
+            QMessageBox.warning(parent,"Information","🚫😊 The user cancelled the export!")
+        else:
+            createPDF(sFeuer[0], output_path[0], parent, data["layer_feuer"])
+    
 
 class Fahrzeugverwaltung(QtWidgets.QDialog, Fahrzeugverwaltung):
-    def __init__(self, parent=None):
-        super(Fahrzeugverwaltung, self).__init__(parent)
+    def init(self, parent=None):
+        super(Fahrzeugverwaltung, self).init(parent)
         self.setupUi(self)
+
+        self.ComboBoxStationsID.setSourceLayer(data["layer_notrufmeldestellen"])
+        self.pushButtonAddFahrzeug.clicked.connect(lambda: self.changeCount(0))
+        self.pushButtonDelFahrzeug.clicked.connect(lambda: self.changeCount(1))
+
+    def changeCount(self,change):
+        # speichern des gewählten Namen aus dem Input
+        sName = self.ComboBoxStationsID.currentText()
+        # das Feature anhand des Namen auswählen
+        data["layer_notrufmeldestellen"].selectByExpression(f"\"Name\"LIKE '{sName}'", data["layer_notrufmeldestellen"].SetSelection)
+        # speichern des gewählten Features
+        sNotrufmeldestelle= data["layer_notrufmeldestellen"].selectedFeatures()
+        # Speichern der aktuellen Anzahl an Fahrzeugen
+        current_Anz_Fahrze = int(sNotrufmeldestelle[0]["Anz_Fahrze"])
+        # ID vom Feld Anz_Fahrze
+        field_idx = data["layer_notrufmeldestellen"].fields().indexOf('Anz_Fahrze')
+        # ändern des Attributs Anz_Fahrze des ausgewählten Features
+        for feat_id in data["layer_notrufmeldestellen"].selectedFeatureIds():
+            # wwenn hinzufügen geklickt wurde:
+            if change == 0:
+                new_val = current_Anz_Fahrze + 1
+                data["layer_notrufmeldestellen"].changeAttributeValue(feat_id, field_idx, new_val)
+                QMessageBox.information(parent,"Information",f"Die Anzahl der 🚒 an der Station: {sName} wurde um +1 erhöht :)")
+            # wenn gelöscht geklickt wurde:
+            else:
+               new_val = current_Anz_Fahrze - 1
+               data["layer_notrufmeldestellen"].changeAttributeValue(feat_id, field_idx, new_val)
+               QMessageBox.information(parent,"Information",f"Die Anzahl der 🚒 an der Station: {sName} wurde um -1 verringert :(")
+        # Auswahl aufheben
+        data["layer_notrufmeldestellen"].removeSelection()
         
 def openBranderfassung(self):
     dialog = BranderfassungDialog()
