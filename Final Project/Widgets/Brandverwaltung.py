@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(400, 210)
+        Dialog.resize(400, 348)
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -65,7 +65,7 @@ class Ui_Dialog(object):
         Dialog.setCursor(QtGui.QCursor(QtCore.Qt.UpArrowCursor))
         Dialog.setWhatsThis("")
         self.button = QtWidgets.QDialogButtonBox(Dialog)
-        self.button.setGeometry(QtCore.QRect(30, 160, 341, 32))
+        self.button.setGeometry(QtCore.QRect(30, 200, 341, 32))
         self.button.setOrientation(QtCore.Qt.Horizontal)
         self.button.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
         self.button.setObjectName("button")
@@ -90,6 +90,9 @@ class Ui_Dialog(object):
         self.ComboBoxBrandID = QgsFeatureListComboBox(Dialog)
         self.ComboBoxBrandID.setGeometry(QtCore.QRect(140, 60, 231, 31))
         self.ComboBoxBrandID.setObjectName("ComboBoxBrandID")
+        self.pushButton = QtWidgets.QPushButton(Dialog)
+        self.pushButton.setGeometry(QtCore.QRect(30, 150, 141, 28))
+        self.pushButton.setObjectName("pushButton")
 
         self.retranslateUi(Dialog)
         self.button.accepted.connect(Dialog.accept) # type: ignore
@@ -102,4 +105,5 @@ class Ui_Dialog(object):
         self.label.setText(_translate("Dialog", "Brandverwaltung"))
         self.label_9.setText(_translate("Dialog", "Brand wählen:"))
         self.pushButtonBrandStatus.setText(_translate("Dialog", "Brandstatus zu gelöscht ändern"))
+        self.pushButton.setText(_translate("Dialog", "Brandbericht drucken"))
 from qgsfeaturelistcombobox import QgsFeatureListComboBox

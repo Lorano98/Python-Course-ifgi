@@ -29,7 +29,7 @@ import random
 
 from qgis.PyQt import uic, QtWidgets
 from PyQt5.QtCore import QDateTime
-from qgis.core import QgsProject, QgsFeature, QgsCoordinateTransform, QgsCoordinateReferenceSystem, QgsVectorLayer
+from qgis.core import QgsProject, QgsFeature, QgsCoordinateTransform, QgsCoordinateReferenceSystem, QgsVectorLayer, QgsDistanceArea
 from qgis.utils import iface
 from qgis.PyQt.QtWidgets import QMessageBox, QFileDialog
 
@@ -76,7 +76,7 @@ class BranderfassungDialog(QtWidgets.QDialog, Branderfassung):
 
         # Datumsfeld mit aktuellem Datum füllen
         self.dateTimeEdit.setDateTime(QDateTime.currentDateTime())
-        self.button.clicked.connect(self.okButton)
+        self.button.accepted.connect(self.okButton)
     
     def updateComboBoxHN(self):
         current_value = self.ComboBoxStrasse.currentText()
@@ -91,10 +91,6 @@ class BranderfassungDialog(QtWidgets.QDialog, Branderfassung):
         self.ComboBoxHN.setDisplayExpression("Hsn")
         self.ComboBoxHN.setFilterExpression(f"H_STRSCHL = {self.strassenschluessel}")
 
-        # # Map Tool erstellen
-        # self.point_tool = QgsMapToolEmitPoint(iface.mapCanvas())
-        # self.point_tool.canvasClicked.connect(self.add_point)
-
     def openInfo(self):
         # Zeigt Infos zu den Brandklassen an
         klassen = {"A": "Brände fester Stoffe, hauptsächlich organischer Natur, die normalerweise unter Glutbildung verbrennen",
@@ -105,28 +101,13 @@ class BranderfassungDialog(QtWidgets.QDialog, Branderfassung):
         QMessageBox.information(parent, "Information", f"Brandklasse A:\n{klassen['A']}\n\nBrandklasse B:\n{klassen['B']}\n\nBrandklasse C:\n{klassen['C']}\n\nBrandklasse D:\n{klassen['D']}\n\nBrandklasse F:\n{klassen['F']}")
 
     def okButton(self):
+        # ID für das Feuer zufällig erstellen
+        id = round(random.random() * 100000000)
         # Neues Feature erstellen
         provider = data["layer_feuer"].dataProvider()
         fields = data["layer_feuer"].fields()
         feature_new = QgsFeature(fields)
-        # Alle Infos aus den Feldern holen
-        attributes = {
-            "id": round(random.random() * 100000000),
-            "Typ": self.ArtFeuer.currentText(),
-            "Num_Gefaeh": self.spinBoxAnzahlGefaehrder.value(),
-            "Num_Verlet": self.spinBoxAnzahlVerletzter.value(),
-            "Verstaerku": self.textEditVerstaerkung.currentText(),
-            "Num_fahrze": self.spinBoxAnzahlFahrzeuge.value(),
-            "Datum": self.dateTimeEdit.dateTime().toString("yyyy-MM-dd hh:mm:ss"),
-            "Strasse": self.ComboBoxStrasse.currentText(),
-            "Hausnummer": self.ComboBoxHN.currentText(),
-            "Status": "brennt"
-        }
-
-        # Jedes Attribut wird in das neue Feature geschrieben
-        for field_name, value in attributes.items():
-            feature_new.setAttribute(field_name, value)
-
+        
         # Selektieren der ausgewählten Adresse
         hsn = self.ComboBoxHN.currentText()
         data["layer_hausnummern"].selectByExpression(f"Hsn = '{hsn}' and H_STRSCHL = {self.strassenschluessel}")
@@ -141,29 +122,75 @@ class BranderfassungDialog(QtWidgets.QDialog, Branderfassung):
 
         # Setzen der Geometrie des neuen Features
         feature_new.setGeometry(geometry_hsn)
-
         data["layer_hausnummern"].removeSelection()
 
-        # Hinzufügen des neuen Features
-        provider.addFeatures([feature_new])
-        self.routing(attributes["id"], geometry_hsn)
+        anzahl_fahrzeuge = self.spinBoxAnzahlFahrzeuge.value()
 
-        QMessageBox.information(parent, "Information", f"Oh nein 😱! Es brennt an folgender Adresse: \n🔥{self.ComboBoxStrasse.currentText()} {self.ComboBoxHN.currentText()}🔥\n\nHilfe ist unterwegs.\n🚒👩‍🚒🚒👨‍🚒🚒🚨🚒")
+        # Nächste Station finden, die noch Fahrzeuge frei hat
+        # Route zu der Station berechnen und in den Routinglayer kopieren
+        station = self.routing(id, geometry_hsn, anzahl_fahrzeuge)
+
+        # Alle Infos aus den Feldern holen
+        attributes = {
+            "id": id,
+            "Typ": self.ArtFeuer.currentText(),
+            "Num_Gefaeh": self.spinBoxAnzahlGefaehrder.value(),
+            "Num_Verlet": self.spinBoxAnzahlVerletzter.value(),
+            "Verstaerku": self.textEditVerstaerkung.currentText(),
+            "Num_fahrze": anzahl_fahrzeuge,
+            "Datum": self.dateTimeEdit.dateTime().toString("yyyy-MM-dd hh:mm:ss"),
+            "Strasse": self.ComboBoxStrasse.currentText(),
+            "Hausnummer": self.ComboBoxHN.currentText(),
+            "Status": "brennend",
+            "Station": station
+        }
+
+        # Jedes Attribut wird in das neue Feature geschrieben
+        for field_name, value in attributes.items():
+            feature_new.setAttribute(field_name, value)
+
+        # Hinzufügen des Feuers
+        provider.addFeatures([feature_new])
+
+        # Prüfen, ob Station gefunden wurde
+        if station == None:
+            QMessageBox.information(parent, "Information", f"Oh nein 😱! Es brennt an folgender Adresse: \n🔥{self.ComboBoxStrasse.currentText()} {self.ComboBoxHN.currentText()}🔥\n\nLeider sind keine Fahrzeuge mehr verfügbar... 🤷‍♀️🤷‍♂️")
+        else:
+            QMessageBox.information(parent, "Information", f"Oh nein 😱! Es brennt an folgender Adresse: \n🔥{self.ComboBoxStrasse.currentText()} {self.ComboBoxHN.currentText()}🔥\n\nHilfe ist unterwegs.\nFolgende Station ist zuständig:\n{station}\n🚒👩‍🚒🚒👨‍🚒🚒🚨🚒")
     
-    def routing(self,id,geometry_hsn):
+
+    def routing(self,id,geometry_hsn,anz_fahrzeuge):
         # Path für den entstehenden Layer festlegen. Da man den Layer später nicht löschen kann, wird
         # immer wieder ein neuer erstellt im Ordner "Muell"
         directory, filename = os.path.split(data["layer_edges_muenster"].dataProvider().dataSourceUri())
-        path = directory + "/muell/" + filename[0:-4] + f"_routing{id}.shp"
-        
-        # Transformieren nach dem Koordinatensystem des Feuerlayers
-        crs_from = QgsCoordinateReferenceSystem(data["layer_feuer"].crs().postgisSrid())
-        crs_to = QgsCoordinateReferenceSystem(3857)
-        coordinate_transform = QgsCoordinateTransform(crs_from, crs_to, QgsProject.instance())
-        geometry_hsn.transform(coordinate_transform)
+        muell_directory = os.path.join(directory, "muell")
+
+        # Prüfen, ob der Ordner "muell" existiert, und ggf. erstellen
+        if not os.path.exists(muell_directory):
+            os.makedirs(muell_directory)
+            
+        path = os.path.join(muell_directory, filename[0:-4] + f"_routing{id}.shp")
 
         # Create a QgsDistanceArea() instance
-        #da = QgsDistanceArea()
+        da = QgsDistanceArea()
+        da.setEllipsoid("ETRS89")
+        
+        # Iterieren durch alle Notrufmeldestellen, um die naheste zu finden
+        min_dist = float('inf')
+        nearest_feature = None
+        for f in data["layer_notrufmeldestellen"].getFeatures():
+            geom = f.geometry()
+            # Berechnen des Abstands
+            dist = da.measureLine([geometry_hsn.asPoint(),geom.asPoint()])
+
+            # Prüfen, ob die Station näher ist und noch genug Fahrzeuge hat
+            if dist < min_dist and int(f["Anz_Fahrze"]) - anz_fahrzeuge >= 0:
+                min_dist = dist
+                nearest_feature = f
+
+        # Keine Station hat mehr genug Fahrzeuge
+        if nearest_feature == None:
+            return None
 
         # Werkzeug Shortest Path
         processing.run("native:shortestpathpointtopoint", 
@@ -179,18 +206,18 @@ class BranderfassungDialog(QtWidgets.QDialog, Branderfassung):
                            'DEFAULT_SPEED':50,
                            'TOLERANCE':0,
                            'START_POINT':geometry_hsn.asPoint(),
-                           'END_POINT':'848697.957322,6791398.668774 [EPSG:3857]',
+                           'END_POINT':nearest_feature.geometry().asPoint(),
                            'OUTPUT': path
                            }
                         )
-        time.sleep(2)
-
+        # Laden des Ergebnis-Layers
         routing = QgsVectorLayer(path, "erg_route", "ogr")
         
         provider = data["layer_routes"].dataProvider()
         fields = data["layer_routes"].fields()
         feature_new = QgsFeature(fields)
 
+        # Attribute, die in den Routenlayer geschrieben werden
         attributes = {
             "id": id,
             "Strasse": self.ComboBoxStrasse.currentText(),
@@ -205,31 +232,36 @@ class BranderfassungDialog(QtWidgets.QDialog, Branderfassung):
             geom = feature.geometry()
         feature_new.setGeometry(geom)
 
+        # Route wird hinzugefügt
         provider.addFeatures([feature_new])
-        #QgsProject.instance().removeMapLayer(routing.id())
 
-        # basename = path[0:-4]
-        # extensions = ['.shp', '.shx', '.dbf', '.prj', '.cpg']
-        # # Alle Dateien mit den entsprechenden Erweiterungen löschen
-        # for ext in extensions:
-        #     filepath = os.path.join("muell/" + path, basename + ext)
-        #     if os.path.exists(filepath):
-        #         os.remove(filepath)
-        #         print(f"{filepath} gelöscht.")
-        #     else:
-        #         print(f"{filepath} existiert nicht.")
+        # Fahrzeuge werden von der Station abgezogen
+        station = nearest_feature["Name"]
+        provider = data["layer_notrufmeldestellen"].dataProvider()
+        fields = data["layer_notrufmeldestellen"].fields()
+        # Getting access to the layers capabilities
+        capabilities = provider.capabilitiesString()
+        # Checking if the capabilty is part of the layer
+        if "Change Attribute Values" in capabilities:
+            # das Feature anhand des Namens auswählen
+            data["layer_notrufmeldestellen"].selectByExpression(f"\"name\"='{station}'", data["layer_notrufmeldestellen"].SetSelection)
+            # speichern des gewählten Features
+            selectedStation = data["layer_notrufmeldestellen"].selectedFeatures()
+            new_count = selectedStation[0]["Anz_Fahrze"] - anz_fahrzeuge
+            for feat_id in data["layer_notrufmeldestellen"].selectedFeatureIds():
+                # Create a dictionary with column and value to change
+                attributes = {fields.indexOf("Anz_Fahrze"):new_count}
+                # Use the changeAttributeValues methode from the provider to 
+                # process the attribute change for the specific feature id
+                provider.changeAttributeValues({feat_id:attributes})
+            
+            data["layer_notrufmeldestellen"].removeSelection()
 
-    # def inputPoint(self):
-    #     print("inputPoint")
-    #     iface.mapCanvas().setMapTool(self.point_tool)
-    
-    # def add_point(self, point):
-    #     print("add_point")
-
+        return station
 
 class BrandverwaltungDialog(QtWidgets.QDialog, Brandverwaltung):
-    def init(self, parent=None):
-        super(BrandverwaltungDialog, self).init(parent)
+    def __init__(self, parent=None):
+        super(BrandverwaltungDialog, self).__init__(parent)
         self.setupUi(self)
         self.ComboBoxBrandID.setSourceLayer(data["layer_feuer"])
         self.ComboBoxBrandID.setDisplayExpression("id")
@@ -238,21 +270,77 @@ class BrandverwaltungDialog(QtWidgets.QDialog, Brandverwaltung):
 
     # Statusänderung
     def changeStatus(self):
-        # speichern der gewählten ID aus dem Input
-        sID = int(self.ComboBoxBrandID.currentText())
-        # das Feature anhand der ID auswählen
-        data["layer_feuer"].selectByExpression(f"\"id\"={sID}", data["layer_feuer"].SetSelection)
-        # speichern des gewählten Features
-        sFeuer= data["layer_feuer"].selectedFeatures()
-        # ID vom Feld Status
-        field_idx = data["layer_feuer"].fields().indexOf('Status')
-        # ändern des Attributs Status des ausgewählten Features zu gelöscht
-        for feat_id in data["layer_feuer"].selectedFeatureIds():
-            data["layer_feuer"].changeAttributeValue(feat_id, field_idx, "geloescht")
-        # Auswahl aufheben
-        data["layer_feuer"].removeSelection()
+    # Statusänderung von brennt zu gelöscht 
+        providerF = data["layer_feuer"].dataProvider()
+        fields = data["layer_feuer"].fields()
+        # Getting access to the layers capabilities
+        capabilitiesF = providerF.capabilitiesString()
+        # Checking if the capabilty is part of the layer
+        if "Change Attribute Values" in capabilitiesF:
+            # speichern der gewählten ID aus dem Input
+            sID = int(self.ComboBoxBrandID.currentText())
+            # das Feature anhand der ID auswählen
+            data["layer_feuer"].selectByExpression(f"\"id\"={sID}", data["layer_feuer"].SetSelection)
+            # speichern des gewählten Features
+            sFeuer= data["layer_feuer"].selectedFeatures()
+            Feuer = sFeuer[0]
 
-        QMessageBox.information(parent,"Information",f"Der Brandstatuts von Brand {sID} wurde zu gelöscht geändert.")
+        # Wenn das Feuer bereits gelöscht ist, wird die Funktion abgebrochen
+            if Feuer["Status"] == "geloescht":
+                QMessageBox.information(parent,"Information",f"Der Brandstatuts von Brand {sID} ist bereits gelöscht yay :)")
+                return
+
+            num_Fahrze = int(Feuer["Num_Fahrze"])
+            station = Feuer["Station"]
+
+            for feat_id in data["layer_feuer"].selectedFeatureIds():
+                # Create a dictionary with column and value to change
+                attributesF = {fields.indexOf("Status"):"geloescht",fields.indexOf("Num_Fahrze"):0}
+                # Use the changeAttributeValues methode from the provider to 
+                # process the attribute change for the specific feature id
+                providerF.changeAttributeValues({feat_id:attributesF})
+            
+            data["layer_feuer"].removeSelection()
+
+    # Fahrzeuge neu sortieren
+        providerNMS = data["layer_notrufmeldestellen"].dataProvider()
+        fieldsNMS = data["layer_notrufmeldestellen"].fields()
+        # Getting access to the layers capabilities
+        capabilitiesNMS = providerNMS.capabilitiesString()
+        # Checking if the capabilty is part of the layer
+        if "Change Attribute Values" in capabilitiesNMS:
+        # Rückrechnen der benutzten Fahrzeuge zur zuständigen Station nach dem Löschen
+            # Selektion der zuständigen Station
+            data["layer_notrufmeldestellen"].selectByExpression(f"\"Name\"LIKE'{station}'", data["layer_notrufmeldestellen"].SetSelection)
+            snms= data["layer_notrufmeldestellen"].selectedFeatures()
+            nms = snms[0]
+            # addition der aktuellen Anzahl der Fahrzeuge an der Station plus die vom Brand zurückkehrenden
+            anz_Fahrze = int(nms["Anz_Fahrze"]) + num_Fahrze
+            for feat_id in data["layer_notrufmeldestellen"].selectedFeatureIds():
+                # Create a dictionary with column and value to change
+                attributesNMS = {fieldsNMS.indexOf("Anz_Fahrze"):anz_Fahrze}
+                # Use the changeAttributeValues methode from the provider to 
+                # process the attribute change for the specific feature id
+                providerNMS.changeAttributeValues({feat_id:attributesNMS})
+            
+            data["layer_notrufmeldestellen"].removeSelection()
+        
+    # Route löschen
+        providerR = data["layer_routes"].dataProvider()
+        if "Change Attribute Values" in capabilitiesNMS:
+        # Rückrechnen der benutzten Fahrzeuge zur zuständigen Station nach dem Löschen
+            # Selektion der zuständigen Station
+            data["layer_routes"].selectByExpression(f"\"id\"={sID}", data["layer_routes"].SetSelection)
+            sroute= data["layer_routes"].selectedFeatures()
+            # speichern der zugehörigen Route
+            route = sroute[0]
+            # löschen der Route
+            providerR.deleteFeatures([route.id()])
+            
+            data["layer_routes"].removeSelection()
+    
+
+        QMessageBox.information(parent,"Information",f"Der Brandstatuts von Brand {sID} wurde zu gelöscht geändert und die 🚒 sind wieder in der Station. Die zugehörige Route wurde entfernt.")
 
     # PDF drucken
         # Function to create a pdf
@@ -270,11 +358,11 @@ class BrandverwaltungDialog(QtWidgets.QDialog, Brandverwaltung):
             QMessageBox.warning(parent,"Information","🚫😊 The user cancelled the export!")
         else:
             createPDF(sFeuer[0], output_path[0], parent, data["layer_feuer"])
-    
+            
 
-class Fahrzeugverwaltung(QtWidgets.QDialog, Fahrzeugverwaltung):
-    def init(self, parent=None):
-        super(Fahrzeugverwaltung, self).init(parent)
+class FahrzeugverwaltungDialog(QtWidgets.QDialog, Fahrzeugverwaltung):
+    def __init__(self, parent=None):
+        super(FahrzeugverwaltungDialog, self).__init__(parent)
         self.setupUi(self)
 
         self.ComboBoxStationsID.setSourceLayer(data["layer_notrufmeldestellen"])
@@ -284,26 +372,44 @@ class Fahrzeugverwaltung(QtWidgets.QDialog, Fahrzeugverwaltung):
     def changeCount(self,change):
         # speichern des gewählten Namen aus dem Input
         sName = self.ComboBoxStationsID.currentText()
-        # das Feature anhand des Namen auswählen
-        data["layer_notrufmeldestellen"].selectByExpression(f"\"Name\"LIKE '{sName}'", data["layer_notrufmeldestellen"].SetSelection)
-        # speichern des gewählten Features
-        sNotrufmeldestelle= data["layer_notrufmeldestellen"].selectedFeatures()
-        # Speichern der aktuellen Anzahl an Fahrzeugen
-        current_Anz_Fahrze = int(sNotrufmeldestelle[0]["Anz_Fahrze"])
-        # ID vom Feld Anz_Fahrze
-        field_idx = data["layer_notrufmeldestellen"].fields().indexOf('Anz_Fahrze')
-        # ändern des Attributs Anz_Fahrze des ausgewählten Features
-        for feat_id in data["layer_notrufmeldestellen"].selectedFeatureIds():
-            # wwenn hinzufügen geklickt wurde:
-            if change == 0:
-                new_val = current_Anz_Fahrze + 1
-                data["layer_notrufmeldestellen"].changeAttributeValue(feat_id, field_idx, new_val)
-                QMessageBox.information(parent,"Information",f"Die Anzahl der 🚒 an der Station: {sName} wurde um +1 erhöht :)")
-            # wenn gelöscht geklickt wurde:
-            else:
-               new_val = current_Anz_Fahrze - 1
-               data["layer_notrufmeldestellen"].changeAttributeValue(feat_id, field_idx, new_val)
-               QMessageBox.information(parent,"Information",f"Die Anzahl der 🚒 an der Station: {sName} wurde um -1 verringert :(")
+        providerNMS = data["layer_notrufmeldestellen"].dataProvider()
+        fieldsNMS = data["layer_notrufmeldestellen"].fields()
+        # Getting access to the layers capabilities
+        capabilitiesNMS = providerNMS.capabilitiesString()
+        # Checking if the capabilty is part of the layer
+        if "Change Attribute Values" in capabilitiesNMS:
+        # Hinzufügen oder Löschen von Fahrzeugen
+            # das Feature anhand des Namen auswählen
+            data["layer_notrufmeldestellen"].selectByExpression(f"\"Name\"LIKE '{sName}'", data["layer_notrufmeldestellen"].SetSelection)
+            # speichern des gewählten Features
+            sNotrufmeldestelle= data["layer_notrufmeldestellen"].selectedFeatures()
+            # Speichern der aktuellen Anzahl an Fahrzeugen
+            current_Anz_Fahrze = int(sNotrufmeldestelle[0]["Anz_Fahrze"])
+
+            # ändern des Attributs Anz_Fahrze des ausgewählten Features
+            for feat_id in data["layer_notrufmeldestellen"].selectedFeatureIds():
+            # wenn hinzufügen geklickt wurde:
+                if change == 0:
+                    new_val = current_Anz_Fahrze + 1
+                    # Create a dictionary with column and value to change
+                    attributesNMS = {fieldsNMS.indexOf("Anz_Fahrze"):new_val}
+                    # Use the changeAttributeValues methode from the provider to 
+                    # process the attribute change for the specific feature id
+                    providerNMS.changeAttributeValues({feat_id:attributesNMS})
+                    QMessageBox.information(parent,"Information",f"Die Anzahl der 🚒 an der Station: {sName} wurde um +1 erhöht :)")
+                # wenn gelöscht geklickt wurde:
+                else:
+                    # Prüfen, ob die Anzahl bereits auf 0 ist
+                    if current_Anz_Fahrze == 0:
+                        QMessageBox.information(parent,"Information",f"Die Anzahl der 🚒 an der Station: {sName} ist bereits 0")
+                    else:
+                        new_val = current_Anz_Fahrze - 1
+                        # Create a dictionary with column and value to change
+                        attributesNMS = {fieldsNMS.indexOf("Anz_Fahrze"):new_val}
+                        # Use the changeAttributeValues methode from the provider to 
+                        # process the attribute change for the specific feature id
+                        providerNMS.changeAttributeValues({feat_id:attributesNMS})
+                        QMessageBox.information(parent,"Information",f"Die Anzahl der 🚒 an der Station: {sName} wurde um -1 verringert :(")
         # Auswahl aufheben
         data["layer_notrufmeldestellen"].removeSelection()
         
@@ -316,7 +422,7 @@ def openBrandverwaltung(self):
     dialog.exec_()
 
 def openFahrzeugverwaltung(self):
-    dialog = Fahrzeugverwaltung()
+    dialog = FahrzeugverwaltungDialog()
     dialog.exec_()
 
 class FirescopeDialog(QtWidgets.QDialog, FORM_CLASS):

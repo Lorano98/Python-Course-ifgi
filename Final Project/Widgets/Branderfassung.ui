@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Dialog</class>
- <widget class="QDialog" name="Dialog">
+ <class>Ui_Dialog</class>
+ <widget class="QDialog" name="Ui_Dialog">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -156,7 +156,7 @@
    </palette>
   </property>
   <property name="cursor">
-   <cursorShape>UpArrowCursor</cursorShape>
+   <cursorShape>ArrowCursor</cursorShape>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
@@ -199,29 +199,6 @@
    </property>
    <property name="text">
     <string>Neuer Brand? Lege das Feuer an:</string>
-   </property>
-  </widget>
-  <widget class="QTextEdit" name="ArtFeuer">
-   <property name="geometry">
-    <rect>
-     <x>150</x>
-     <y>240</y>
-     <width>221</width>
-     <height>31</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="buttonInputPoint">
-   <property name="geometry">
-    <rect>
-     <x>30</x>
-     <y>60</y>
-     <width>93</width>
-     <height>28</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Input Point</string>
    </property>
   </widget>
   <widget class="QLabel" name="label">
@@ -296,20 +273,10 @@
     <string>Verstärkung:</string>
    </property>
   </widget>
-  <widget class="QTextEdit" name="textEditVerstaerkung">
-   <property name="geometry">
-    <rect>
-     <x>130</x>
-     <y>360</y>
-     <width>241</width>
-     <height>31</height>
-    </rect>
-   </property>
-  </widget>
   <widget class="QLabel" name="label_6">
    <property name="geometry">
     <rect>
-     <x>130</x>
+     <x>30</x>
      <y>60</y>
      <width>111</width>
      <height>31</height>
@@ -321,7 +288,7 @@
     </font>
    </property>
    <property name="text">
-    <string>oder Adresse:</string>
+    <string>Adresse:</string>
    </property>
   </widget>
   <widget class="Line" name="line">
@@ -469,6 +436,39 @@
     </rect>
    </property>
   </widget>
+  <widget class="QComboBox" name="ArtFeuer">
+   <property name="geometry">
+    <rect>
+     <x>150</x>
+     <y>241</y>
+     <width>181</width>
+     <height>31</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="info">
+   <property name="geometry">
+    <rect>
+     <x>340</x>
+     <y>241</y>
+     <width>31</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>?</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="textEditVerstaerkung_2">
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>360</y>
+     <width>231</width>
+     <height>31</height>
+    </rect>
+   </property>
+  </widget>
  </widget>
  <customwidgets>
   <customwidget>
@@ -482,7 +482,7 @@
   <connection>
    <sender>button</sender>
    <signal>accepted()</signal>
-   <receiver>Dialog</receiver>
+   <receiver>Ui_Dialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -498,7 +498,7 @@
   <connection>
    <sender>button</sender>
    <signal>rejected()</signal>
-   <receiver>Dialog</receiver>
+   <receiver>Ui_Dialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

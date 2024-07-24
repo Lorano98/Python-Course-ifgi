@@ -62,7 +62,7 @@ class Ui_Dialog(object):
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Link, brush)
         Dialog.setPalette(palette)
-        Dialog.setCursor(QtGui.QCursor(QtCore.Qt.UpArrowCursor))
+        Dialog.setCursor(QtGui.QCursor(QtCore.Qt.ArrowCursor))
         Dialog.setWhatsThis("")
         self.button = QtWidgets.QDialogButtonBox(Dialog)
         self.button.setGeometry(QtCore.QRect(30, 160, 341, 32))
