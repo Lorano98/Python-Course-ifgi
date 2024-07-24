@@ -303,6 +303,9 @@ class BrandverwaltungDialog(QtWidgets.QDialog, Brandverwaltung):
             data["layer_feuer"].removeSelection()
 
     # Fahrzeuge neu sortieren
+        if Feuer["Station"] == None:
+            QMessageBox.information(parent,"Information",f"Du warst wohl zu spät. Der Brand {sID} ist von selbst ausgegangen. yay :)")
+            return
         providerNMS = data["layer_notrufmeldestellen"].dataProvider()
         fieldsNMS = data["layer_notrufmeldestellen"].fields()
         # Getting access to the layers capabilities
