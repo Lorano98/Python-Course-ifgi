@@ -21,6 +21,7 @@ def createPDF(feuer, output_path, parent, layer_Feuer):
     num_Fahrze = feuer["num_Fahrze"]
     datum = feuer["Datum"]
     status = feuer["Status"]
+    station = feuer["Station"]
 
     # Zoom to selected features
     iface.mapCanvas().zoomToSelected(layer_Feuer)
@@ -54,14 +55,15 @@ def createPDF(feuer, output_path, parent, layer_Feuer):
     if status == "ja":
         c.drawString(100,610,f"Der Brand wurde erkannt und die Gefahr gebannt.")
     else:
-        c.drawString(100,610,f"Es brennt noch!")  
+        c.drawString(100,610,f"Es brennt noch!") 
+    c.drawString(100,595,f"zuständige Station: {station}") 
     # Draw image of map
     map = ImageReader(picture_path)
-    c.drawImage(map, 100, 450, width=300, height=150)
+    c.drawImage(map, 100, 400, width=300, height=150)
 
     c.save()
     
     os.remove(picture_path)
 
     # Show message with info, that is was created successfully
-    QMessageBox.information(parent,"Information","ദ്ദി(｡•̀ ,<)~✩‧₊ \nThe pdf was created successfully at the path: " + output_path)
+    QMessageBox.information(parent,"Information","ദ്ദി(｡•̀ ,<)~✩‧₊ \nDas pdf wurde erfolgreich erstellt und gespeichert: " + output_path)
