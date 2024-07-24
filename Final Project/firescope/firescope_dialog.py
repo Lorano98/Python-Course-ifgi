@@ -248,7 +248,7 @@ class BrandverwaltungDialog(QtWidgets.QDialog, Brandverwaltung):
         field_idx = data["layer_feuer"].fields().indexOf('Status')
         # ändern des Attributs Status des ausgewählten Features zu gelöscht
         for feat_id in data["layer_feuer"].selectedFeatureIds():
-            data["layer_feuer"].changeAttributeValue(feat_id, field_idx, "ja")
+            data["layer_feuer"].changeAttributeValue(feat_id, field_idx, "geloescht")
         # Auswahl aufheben
         data["layer_feuer"].removeSelection()
 
