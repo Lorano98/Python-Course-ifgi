@@ -23,3 +23,7 @@ Alle Daten liegen im Ordner "Final Project"
 ### Fahrzeugverwaltung
 - Es können Fahrzeuge den Stationen zugewiesen oder gelöscht werden.
 - Durch klicken auf die Knöpfe werden jeweils ein Fahrzeug hinzugefügt oder gelöscht.
+
+### Die Symbolisierung
+- Ist der Status eines Brandes "gelöscht" erscheint das Feuer ausgegraut
+- Sind bei einer Station alle Fahrzeuge im Einsatz wird diese auch ausgegraut
