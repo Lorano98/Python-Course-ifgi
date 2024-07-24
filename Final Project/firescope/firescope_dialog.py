@@ -47,14 +47,21 @@ parent = iface.mainWindow()
 
 # Alle Layer laden und in einem Dictionary speichern
 # Warnung anzeigen, wenn ein Layer nicht gefunden wird
-warning_message = 'Der Layer "{}" muss sich im Projekt befinden! \nBitte Layer hinzufügen und Plugin neustarten.'
+warning_message = 'Die folgenden Layer müssen sich im Projekt befinden:\n\n{}\n\nBitte die fehlenden Layer hinzufügen und das Plugin neu starten.\n\n🔴😥❌🤦‍♀️🛠🤯🩸😨📉👩‍💻👎'
 layer_names = ["Feuer", "Strassen", "Hausnummern", "edges_muenster", "routes", "Notrufmeldestellen"]
 data = {}
+missing_layers = []
+# Überprüfen, ob die Layer im Projekt vorhanden sind
 for name in layer_names:
-    try:
-        data[f"layer_{name.lower()}"] = QgsProject.instance().mapLayersByName(name)[0]
-    except IndexError:
-        QMessageBox.warning(parent, "Warning", warning_message.format(name))
+    layer_list = QgsProject.instance().mapLayersByName(name)
+    if layer_list:
+        data[f"layer_{name.lower()}"] = layer_list[0]
+    else:
+        missing_layers.append(name)
+
+# Wenn fehlende Layer vorhanden sind, eine Warnmeldung anzeigen
+if missing_layers:
+    QMessageBox.warning(parent, "Warning", warning_message.format('\n'.join(missing_layers)))
 
 class BranderfassungDialog(QtWidgets.QDialog, Branderfassung):
     def __init__(self, parent=None):
