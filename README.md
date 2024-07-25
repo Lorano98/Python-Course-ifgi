@@ -5,7 +5,7 @@ Erfassen und verwalten von Bränden in Münster.
 Alle Daten liegen im Ordner "Final Project"
 
 ## Starthinweise
-1. Ordner "Firescope" in den Plugin Ordner von QGIS speichern:
+1. Ordner "firescope" in den Plugin Ordner von QGIS speichern:
 `C:\Users\benutzer\AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins\`
 2. Öffnen des QGIS Projektes "Firescope" aus dem Ordner "Shapefiles"
 3. Aktivieren des Plugins
